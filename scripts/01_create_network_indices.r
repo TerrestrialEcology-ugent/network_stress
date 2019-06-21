@@ -22,35 +22,28 @@ library(reshape2)
 ## directly get the network from the data/network.csv file
 
 # # load data
-# feeder_dat <- read.csv("data/feeder_data_formatted.csv")
-# 
-# # get the infos for computing the social network
-# ## the time of the recording
-# day_hour <- strptime(feeder_dat$day_hour, format = "%Y-%m-%d %H:%M:%S") 
-# day_hour <- as.numeric(day_hour) # turn into integer
-# day_hour <- day_hour - min(day_hour) # for faster computation
-# 
-# ## the transponder id of the bird
-# bird_id <- feeder_dat$Transponder.code
-# 
-# ## the feeder id
-# feeder_id <- feeder_dat$Feeder_ID
-# 
-# # run gmmevents, this line of code takes a lot of RAM! Beware !!!
-# # gmm <- gmmevents(day_hour, bird_id, feeder_id, verbose = FALSE)
-# 
-# # get network
-# # network <- get_network(gmm$gbi)
-# 
-# # some formatting
-# # network <- as.data.frame(network) 
-# # network$from <- rownames(network)
-# # network <- melt(network, id.vars = "from", variable.name = "to", value.name = "weight")
-# # network <- subset(network, weight > 0)
-# 
-# 
+feeder_dat <- read.csv("data/feeder_data_formatted.csv")
+
+# get the infos for computing the social network
+## the time of the recording
+day_hour <- strptime(feeder_dat$day_hour, format = "%Y-%m-%d %H:%M:%S")
+day_hour <- as.numeric(day_hour) # turn into integer
+day_hour <- day_hour - min(day_hour) # for faster computation
+
+## the transponder id of the bird
+bird_id <- feeder_dat$Transponder.code
+
+## the feeder id
+feeder_id <- feeder_dat$Feeder_ID
+
+# run gmmevents, this line of code takes a lot of RAM! Beware !!!
+# gmm <- gmmevents(day_hour, bird_id, feeder_id, verbose = FALSE)
+
+# get network
+# network <- get_network(gmm$gbi)
+
 # # save it in a file
-# # write.table(network, "network.csv",row.names = FALSE, sep = ",")
+# # write.table(network, "data/network.csv",row.names = FALSE, sep = ",")
 
 # 2. Derive the network indices
 
@@ -58,11 +51,11 @@ library(reshape2)
 network <- read.csv("data/network.csv")
 
 ## turn it into an igraph object
-gg_winter <- graph_from_data_frame(network, directed = FALSE)
+gg_winter <- graph_from_adjacency_matrix(as.matrix(network), mode = "undirected", weighted = TRUE)
 
 ## put all into one data frame
-network_metric <- data.frame(bird_tag = names(V(gg_winter)),
-                             betw = betweenness(gg_winter, directed = FALSE),
+network_metric <- data.frame(bird_tag = gsub("X","",names(V(gg_winter))),
+                             betw = log(betweenness(gg_winter, directed = FALSE) + 1),
                              eigen = eigen_centrality(gg_winter)$vector,
                              degree = degree(gg_winter, mode = "all"),
                              strength = strength(gg_winter),
