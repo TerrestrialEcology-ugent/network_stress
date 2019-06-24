@@ -38,6 +38,8 @@ feeder_id <- feeder_dat$Feeder_ID
 
 # run gmmevents, this line of code takes a lot of RAM! Beware !!!
 # gmm <- gmmevents(day_hour, bird_id, feeder_id, verbose = FALSE)
+# save this for the permutation analysis
+# saveRDS("data/gmmevent_out_2016_2017.rds")
 
 # get network
 # network <- get_network(gmm$gbi)
