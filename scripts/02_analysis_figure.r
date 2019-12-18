@@ -20,7 +20,7 @@ network_dat <- read.csv("data/network_dat.csv")
 # 1. Fit the centrality ~ cort_orig models
 ## some data points were dropped to ensure that
 ## model assumptions were met
-m_1 <- lm(betw ~ cort_orig + sex + age + barl_orig, network_dat, subset = cort_orig < 0.1) # males have higher betw slight effect of cort
+m_1 <- lm(betw ~ cort_orig + sex + age + barl_orig, network_dat[-153,]) # males have higher betw slight effect of cort
 m_2 <- lm(degree ~ cort_orig + sex + age + barl_orig, network_dat[-153,]) # effect of cort
 m_3 <- lm(eigen ~ cort_orig + sex + age + barl_orig, network_dat[-153,]) # trend for positive effect of cort on centrality
 m_4 <- lm(strength ~ cort_orig + sex + age + barl_orig, network_dat[-153,]) # effect of cort
@@ -85,8 +85,8 @@ ggsave("figures/fig_03.png",gg_orig)
 ## some data points were dropped to ensure that
 ## model assumptions were met
 m_5 <- glm(cort_ind + 0.0001 ~ betw + sex + age + barl_ind, network_dat[-272,], family = Gamma(link="log"))
-m_6 <- glm(cort_ind + 0.0001 ~ degree + sex + age + barl_ind, network_dat, subset = cort_ind < 8, family = Gamma(link="log"))
-m_7 <- glm(cort_ind + 0.0001 ~ eigen + sex + age + barl_ind, network_dat[-c(25,272,279),], family = Gamma(link="log"))
+m_6 <- glm(cort_ind + 0.0001 ~ degree + sex + age + barl_ind, network_dat[-272,], family = Gamma(link="log"))
+m_7 <- glm(cort_ind + 0.0001 ~ eigen + sex + age + barl_ind, network_dat[-c(25,272),], family = Gamma(link="log"))
 m_8 <- glm(cort_ind + 0.0001 ~ strength + sex + age + barl_ind, network_dat[-272,], family = Gamma(link="log"))
 
 ## save the models
