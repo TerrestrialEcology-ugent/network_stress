@@ -10,7 +10,7 @@
 ############################################################
 
 # set wd to local location of the github repo
-setwd("~/Documents/PostDoc_Ghent/Feeder_stuff/network_stress/")
+setwd("~/PostDoc_Ghent/Feeder_stuff/network_stress/")
 
 # load libraries
 library(plyr)
@@ -57,8 +57,8 @@ cent_perm <- read.csv("data/stress_info.csv")
 net_stress <- full_join(net_df, cent_perm, by = "bird_tag")
 # save this file
 # write.table(net_stress, "data/net_stress_perm.csv",sep = ",", row.names = FALSE)
-
-# 
+# read - in the saved file
+# net_stress <- read.csv("data/net_stress_perm.csv")
 
 # 2. permutation on the network centrality ~ cort_orig models
 # re-load the models
@@ -70,7 +70,7 @@ orig_b <- data.frame(term = c("(Intercept)","cort_orig","ageAD","sexm","barl_ori
 net_stress %>%
   filter(!is.na(betw)) %>%
   group_by(perm) %>%
-  do(tidy(lm(betw ~ barl_orig + age + sex + cort_orig, .[-153,]))) %>%
+  do(tidy(lm(betw ~ barl_orig + age + sex + cort_orig, .[-c(153, 160),]))) %>%
   left_join(orig_b, by = "term") %>%
   group_by(term) %>%
   summarise(p_perm = sum(estimate.x > estimate.y) / n_perm) %>%
@@ -107,6 +107,115 @@ net_stress %>%
   filter(!is.na(betw)) %>%
   group_by(perm) %>%
   do(tidy(lm(strength ~ barl_orig + age + sex + cort_orig, .[-153,]))) %>%
+  left_join(orig_s, by = "term") %>%
+  group_by(term) %>%
+  summarise(p_perm = sum(estimate.x > estimate.y) / n_perm) %>%
+  mutate(p_perm = ifelse(p_perm > 0.5, 1 - p_perm, p_perm)) -> dd_strength
+
+
+# 3. the same models but this time without the pullis
+# re-load the models
+m_orig_ad <- readRDS("models/m_orig_ad.rds")
+
+## the betwenness model
+orig_b <- data.frame(term = c("(Intercept)","cort_orig","sexm","barl_orig"), estimate = coef(m_orig_ad$betw))
+
+net_stress %>%
+  filter(!is.na(betw)) %>%
+  group_by(perm) %>%
+  do(tidy(lm(betw ~ barl_orig + sex + cort_orig, .[-153,], subset = age == "AD"))) %>%
+  left_join(orig_b, by = "term") %>%
+  group_by(term) %>%
+  summarise(p_perm = sum(estimate.x > estimate.y) / n_perm) %>%
+  mutate(p_perm = ifelse(p_perm > 0.5, 1 - p_perm, p_perm)) -> dd_betw
+
+## the eigen model
+orig_e <- data.frame(term = c("(Intercept)","cort_orig","sexm","barl_orig"), estimate = coef(m_orig_ad$eigen))
+
+net_stress %>%
+  filter(!is.na(betw)) %>%
+  group_by(perm) %>%
+  do(tidy(lm(eigen ~ barl_orig + sex + cort_orig, .[-153,], subset = age == "AD"))) %>%
+  left_join(orig_e, by = "term") %>%
+  group_by(term) %>%
+  summarise(p_perm = sum(estimate.x > estimate.y) / n_perm) %>%
+  mutate(p_perm = ifelse(p_perm > 0.5, 1 - p_perm, p_perm)) -> dd_eigen
+
+## the degree model
+orig_d <- data.frame(term = c("(Intercept)","cort_orig","sexm","barl_orig"), estimate = coef(m_orig_ad$degree))
+
+net_stress %>%
+  filter(!is.na(betw)) %>%
+  group_by(perm) %>%
+  do(tidy(lm(deg ~ barl_orig + sex + cort_orig, .[-153,], subset = age == "AD"))) %>%
+  left_join(orig_d, by = "term") %>%
+  group_by(term) %>%
+  summarise(p_perm = sum(estimate.x > estimate.y) / n_perm) %>%
+  mutate(p_perm = ifelse(p_perm > 0.5, 1 - p_perm, p_perm)) -> dd_degree
+
+## the strength model
+orig_s <- data.frame(term = c("(Intercept)","cort_orig","sexm","barl_orig"), estimate = coef(m_orig_ad$strength))
+
+net_stress %>%
+  filter(!is.na(betw)) %>%
+  group_by(perm) %>%
+  do(tidy(lm(strength ~ barl_orig + sex + cort_orig, .[-153,], subset = age == "AD"))) %>%
+  left_join(orig_s, by = "term") %>%
+  group_by(term) %>%
+  summarise(p_perm = sum(estimate.x > estimate.y) / n_perm) %>%
+  mutate(p_perm = ifelse(p_perm > 0.5, 1 - p_perm, p_perm)) -> dd_strength
+
+# 4. now accounting for feeding frequency effects
+network_dat <- read.csv("data/network_dat.csv") 
+# re-load the models
+m_orig_feeding <- readRDS("models/m_orig_feeding.rds")
+net_stress <- merge(net_stress, network_dat[,c("BIRD_ID", "feeding_freq")], by = "BIRD_ID")
+
+## the betwenness model
+orig_b <- data.frame(term = c("(Intercept)","cort_orig","sexm", "ageAD","barl_orig", "feeding_freq"),
+                     estimate = coef(m_orig_feeding$betw))
+
+net_stress %>%
+  filter(!is.na(betw)) %>%
+  group_by(perm) %>%
+  do(tidy(lm(betw ~ barl_orig + sex + age + cort_orig + feeding_freq, .[-153,]))) %>%
+  left_join(orig_b, by = "term") %>%
+  group_by(term) %>%
+  summarise(p_perm = sum(estimate.x > estimate.y) / n_perm) %>%
+  mutate(p_perm = ifelse(p_perm > 0.5, 1 - p_perm, p_perm)) -> dd_betw
+
+## the eigen model
+orig_e <- data.frame(term = c("(Intercept)","cort_orig","sexm", "ageAD","barl_orig", "feeding_freq"), estimate = coef(m_orig_feeding$eigen))
+
+net_stress %>%
+  filter(!is.na(betw)) %>%
+  group_by(perm) %>%
+  do(tidy(lm(eigen ~ barl_orig + sex + age + cort_orig + feeding_freq, .[-153,]))) %>%
+  left_join(orig_e, by = "term") %>%
+  group_by(term) %>%
+  summarise(p_perm = sum(estimate.x > estimate.y) / n_perm) %>%
+  mutate(p_perm = ifelse(p_perm > 0.5, 1 - p_perm, p_perm)) -> dd_eigen
+
+## the degree model
+orig_d <- data.frame(term = c("(Intercept)","cort_orig","sexm", "ageAD","barl_orig", "feeding_freq"),
+                     estimate = coef(m_orig_feeding$degree))
+
+net_stress %>%
+  filter(!is.na(betw)) %>%
+  group_by(perm) %>%
+  do(tidy(lm(deg ~ barl_orig + sex + age + cort_orig + feeding_freq, .[-153,]))) %>%
+  left_join(orig_d, by = "term") %>%
+  group_by(term) %>%
+  summarise(p_perm = sum(estimate.x > estimate.y) / n_perm) %>%
+  mutate(p_perm = ifelse(p_perm > 0.5, 1 - p_perm, p_perm)) -> dd_degree
+
+## the strength model
+orig_s <- data.frame(term = c("(Intercept)","cort_orig","sexm","ageAD","barl_orig", "feeding_freq"), estimate = coef(m_orig_feeding$strength))
+
+net_stress %>%
+  filter(!is.na(betw)) %>%
+  group_by(perm) %>%
+  do(tidy(lm(strength ~ barl_orig + sex + age + cort_orig + feeding_freq, .[-153,]))) %>%
   left_join(orig_s, by = "term") %>%
   group_by(term) %>%
   summarise(p_perm = sum(estimate.x > estimate.y) / n_perm) %>%
