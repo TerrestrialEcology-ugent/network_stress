@@ -2,7 +2,7 @@
 
 [![DOI](https://zenodo.org/badge/193479297.svg)](https://zenodo.org/badge/latestdoi/193479297)
 
-This repository contain all scripts and data needed to reproduce the analysis, figures and table presented in the manuscript: "Birds exposed to physiological stress post-breeding engage in stress-reducing social interactions in winter flocks." by Dekeukeleire et al
+This repository contain all scripts and data needed to reproduce the analysis, figures and table presented in the manuscript: "Cross-seasonal relationships between social network position and stress in a free-ranging songbird." by Dekeukeleire et al
 
 ## How to
 

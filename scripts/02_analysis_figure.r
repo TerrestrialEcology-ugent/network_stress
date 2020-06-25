@@ -8,7 +8,7 @@
 ############################################################
 
 # set wd to the local position of the github repo
-setwd("~/Documents/PostDoc_Ghent/Feeder_stuff/network_stress/")
+setwd("~/PostDoc_Ghent/Feeder_stuff/network_stress/")
 
 # load packages
 library(tidyverse)
@@ -20,10 +20,10 @@ network_dat <- read.csv("data/network_dat.csv")
 # 1. Fit the centrality ~ cort_orig models
 ## some data points were dropped to ensure that
 ## model assumptions were met
-m_1 <- lm(betw ~ cort_orig + sex + age + barl_orig, network_dat[-153,]) # males have higher betw slight effect of cort
-m_2 <- lm(degree ~ cort_orig + sex + age + barl_orig, network_dat[-153,]) # effect of cort
-m_3 <- lm(eigen ~ cort_orig + sex + age + barl_orig, network_dat[-153,]) # trend for positive effect of cort on centrality
-m_4 <- lm(strength ~ cort_orig + sex + age + barl_orig, network_dat[-153,]) # effect of cort
+m_1 <- lm(betw ~ cort_orig + sex + age + barl_orig, network_dat[-c(153),]) # males have higher betw slight effect of cort
+m_2 <- lm(degree ~ cort_orig + sex + age + barl_orig, network_dat[-c(153),]) # effect of cort
+m_3 <- lm(eigen ~ cort_orig + sex + age + barl_orig, network_dat[-c(153),]) # trend for positive effect of cort on centrality
+m_4 <- lm(strength ~ cort_orig + sex + age + barl_orig, network_dat[-c(153),]) # effect of cort
 
 ## save these models
 m_orig <- list(betw = m_1, degree = m_2, eigen = m_3, strength = m_4)
@@ -80,6 +80,26 @@ gg_strength <- ggplot(newdat, aes(x=cort_orig,y=strength)) +
 ### put this all together
 gg_orig <- grid.arrange(gg_eigen,gg_betw,gg_degree,gg_strength,bottom="Original feather CORT (\U003BCg)")
 ggsave("figures/fig_03.png",gg_orig)
+
+# 1.2 Fit the centrality ~ cort_orig models without the pullis
+# some individuals were dropped to meet model requirements
+m_1 <- lm(betw ~ cort_orig + sex + barl_orig, network_dat[-153,], subset = age == "AD") # males have higher betw slight effect of cort
+m_2 <- lm(degree ~ cort_orig + sex + barl_orig, network_dat[-153,], subset = age == "AD") # effect of cort
+m_3 <- lm(eigen ~ cort_orig + sex + barl_orig, network_dat[-c(153),], subset = age == "AD") # trend for positive effect of cort on centrality
+m_4 <- lm(strength ~ cort_orig + sex + barl_orig, network_dat[-c(153),], subset = age == "AD") # effect of cort
+
+## save these models
+m_orig_ad <- list(betw = m_1, degree = m_2, eigen = m_3, strength = m_4)
+saveRDS(m_orig_ad, "models/m_orig_ad.rds")
+
+# 1.3 Fit the centrality ~ cort_orig models with feeder visits
+m_1 <- lm(betw ~ cort_orig + sex + age + barl_orig + feeding_freq, network_dat[-153,]) # males have higher betw slight effect of cort
+m_2 <- lm(degree ~ cort_orig + sex + age + barl_orig + feeding_freq, network_dat[-153,]) # effect of cort
+m_3 <- lm(eigen ~ cort_orig + sex + age + barl_orig + feeding_freq, network_dat[-c(153),]) # trend for positive effect of cort on centrality
+m_4 <- lm(strength ~ cort_orig + sex + age + barl_orig + feeding_freq, network_dat[-c(153),]) # effect of cort
+
+m_orig_feeding <- list(betw = m_1, degree = m_2, eigen = m_3, strength = m_4)
+saveRDS(m_orig_feeding, "models/m_orig_feeding.rds")
 
 # 2. Fit the cort_induced ~ centrality models
 ## some data points were dropped to ensure that
@@ -254,7 +274,5 @@ gg_feed <- grid.arrange(gg_eigen,gg_betw,gg_degree,gg_strength)
 ggsave("figures/fig_05.png",gg_feed)
 
 # 4. fit the cort_induced ~ feeding frequency model
-m_13 <- glm(cort_ind + 0.0001 ~ feeding_freq + barl_ind, network_dat,family = Gamma(link="log"), subset = cort_ind < 10) # no detectable effect
-
-
-
+m_13 <- glm(cort_ind + 0.0001 ~ feeding_freq + barl_ind + sex + age, network_dat,family = Gamma(link="log"), subset = cort_ind < 10) # no detectable effect
+m_14 <- lm(feeding_freq ~ cort_orig + barl_orig + sex +age, network_dat[-c(153, 258),])
